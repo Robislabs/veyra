@@ -702,15 +702,19 @@
     /* ─── MOBILE MENU BUTTON ─── */
     .menu-btn {
       display: none;
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      z-index: 60;
       align-items: center;
       justify-content: center;
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      border: none;
-      background: none;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border-med);
+      background: var(--surface);
       color: var(--text-muted);
       cursor: pointer;
-      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
       transition: background 0.12s;
     }
     .menu-btn:hover { background: var(--hover-bg); }
@@ -755,7 +759,8 @@
       .ws-popup { left: 8px; top: 56px; width: calc(100vw - 16px); }
       .collapse-btn { display: none; }
       .menu-btn { display: flex; }
-      .chat-hdr { padding: 12px 16px 10px; }
+      .chat-hdr { padding: 12px 16px 10px; padding-left: 60px; }
+      .v-hdr { padding-left: 60px; }
       .chat-msgs { padding: 14px 16px; }
       .chat-input-wrap {
         padding: 8px 16px;
@@ -766,6 +771,9 @@
 </head>
 <body>
 <div class="overlay" id="overlay"></div>
+<button class="menu-btn" id="menuBtn" aria-label="Open navigation">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
 <div class="app">
 
   <!-- ══════════════════════════════════
@@ -964,9 +972,6 @@
     <!-- ── INBOX / CHAT ── -->
     <div class="view active" id="view-inbox">
       <div class="chat-hdr">
-        <button class="menu-btn" id="menuBtn" aria-label="Open navigation">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
         <div class="chat-hdr-icon">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
