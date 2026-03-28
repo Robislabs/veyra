@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veyra — Business Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #E5E5E3;
+      --sidebar-bg:   #FFFFFF;
+      --main-bg:      #F0F0EE;
+      --surface:      #FFFFFF;
+      --text:         #0F0F0F;
+      --text-muted:   #6B6B6B;
+      --text-faint:   #A3A3A3;
+      --accent:       #6B4EFF;
+      --accent-text:  #5338E0;
+      --accent-light: rgba(107,78,255,0.08);
+      --hover-bg:     rgba(0,0,0,0.04);
+      --active-bg:    rgba(107,78,255,0.07);
+      --border:       rgba(0,0,0,0.07);
+      --border-med:   rgba(0,0,0,0.13);
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.07);
+      --shadow-md:    0 4px 16px rgba(0,0,0,0.10);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,0.14);
+      --radius:       10px;
+      --radius-sm:    7px;
+      --radius-lg:    14px;
+      --sidebar-w:    220px;
+      --sidebar-w-collapsed: 52px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══ APP SHELL ═══ */
+    .app {
+      display: flex;
+      height: 100vh;
+      padding: 8px;
+      gap: 8px;
+    }
+
+    /* ═══ SIDEBAR ═══ */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: visible;
+      box-shadow: var(--shadow-sm);
+      transition: width 0.22s cubic-bezier(0.16,1,0.3,1), min-width 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    /* ── Collapsed sidebar ── */
+    .sidebar.collapsed {
+      width: var(--sidebar-w-collapsed);
+      min-width: var(--sidebar-w-collapsed);
+    }
+    .sidebar.collapsed .ws-info,
+    .sidebar.collapsed .ws-chev,
+    .sidebar.collapsed .search-placeholder,
+    .sidebar.collapsed .search-kbd,
+    .sidebar.collapsed .ni-label,
+    .sidebar.collapsed .ni-sc,
+    .sidebar.collapsed .ni-badge,
+    .sidebar.collapsed .sec-hdr,
+    .sidebar.collapsed .add-row,
+    .sidebar.collapsed .user-info,
+    .sidebar.collapsed .user-chev {
+      display: none;
+    }
+    .sidebar.collapsed .ws-btn {
+      justify-content: center;
+      padding: 6px;
+    }
+    .sidebar.collapsed .search-row {
+      justify-content: center;
+      padding: 5px;
+    }
+    .sidebar.collapsed .ni {
+      justify-content: center;
+      padding: 6px;
+    }
+    .sidebar.collapsed .ni-icon {
+      margin: 0;
+    }
+    .sidebar.collapsed .user-row {
+      justify-content: center;
+      padding: 6px;
+    }
+    .sidebar.collapsed .sb-nav {
+      padding: 7px 6px;
+    }
+    .sidebar.collapsed .ws-header,
+    .sidebar.collapsed .sb-search,
+    .sidebar.collapsed .sb-bottom {
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+    .sidebar.collapsed .sb-section { margin-top: 2px; }
+    .sidebar.collapsed .proj-dot { margin: 0 auto; }
+
+    /* Collapse toggle button */
+    .collapse-btn {
+      position: absolute;
+      top: 14px;
+      right: -11px;
+      width: 22px;
+      height: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border-med);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-faint);
+      z-index: 10;
+      box-shadow: var(--shadow-sm);
+      transition: color 0.13s, background 0.13s;
+    }
+    .collapse-btn:hover { color: var(--text); background: var(--hover-bg); }
+    .collapse-btn svg { transition: transform 0.22s cubic-bezier(0.16,1,0.3,1); }
+    .sidebar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+
+    /* Workspace header */
+    .ws-header {
+      padding: 11px 10px 9px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ws-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.13s;
+      user-select: none;
+    }
+    .ws-btn:hover { background: var(--hover-bg); }
+
+    .ws-logo {
+      width: 27px; height: 27px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #6B4EFF 0%, #A88BFF 100%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ws-logo svg { width: 15px; height: 15px; }
+    .ws-info { flex: 1; min-width: 0; }
+    .ws-name { font-size: 13px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ws-plan { font-size: 10.5px; color: var(--text-faint); line-height: 1.2; margin-top: 1px; }
+    .ws-chev { color: var(--text-faint); flex-shrink: 0; transition: transform 0.2s; }
+    .ws-btn.popup-open .ws-chev { transform: rotate(180deg); }
+
+    /* Search */
+    .sb-search {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 5px 9px;
+      cursor: text;
+      transition: border-color 0.13s;
+    }
+    .search-row:hover { border-color: var(--border-med); }
+    .search-row svg { color: var(--text-faint); flex-shrink: 0; }
+    .search-placeholder { font-size: 12.5px; color: var(--text-faint); flex: 1; }
+    .search-kbd { font-size: 10px; color: var(--text-faint); background: rgba(0,0,0,0.06); padding: 2px 5px; border-radius: 4px; }
+
+    /* Nav scroll area */
+    .sb-nav {
+      padding: 7px 10px;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .sb-nav::-webkit-scrollbar { display: none; }
+
+    /* Nav item */
+    .ni {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .ni:hover { background: var(--hover-bg); }
+    .ni.active { background: var(--active-bg); }
+    .ni.active .ni-label { color: var(--accent-text); font-weight: 500; }
+    .ni.active .ni-icon { color: var(--accent); }
+
+    .ni-icon { color: var(--text-muted); flex-shrink: 0; display: flex; line-height: 0; }
+    .ni-label { font-size: 13px; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ni-sc { font-size: 10.5px; color: var(--text-faint); }
+    .ni-badge { background: #E53E3E; color: white; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 20px; min-width: 18px; text-align: center; line-height: 1.5; }
+    .proj-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Section headers */
+    .sb-section { margin-top: 6px; }
+    .sec-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 8px 2px;
+    }
+    .sec-title { font-size: 10.5px; font-weight: 600; color: var(--text-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+    .sec-add {
+      width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: var(--text-faint);
+      transition: background 0.12s, color 0.12s;
+    }
+    .sec-add:hover { background: var(--hover-bg); color: var(--text-muted); }
+
+    .add-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .add-row:hover { background: var(--hover-bg); }
+    .add-row span { font-size: 12.5px; color: var(--text-faint); }
+
+    /* Bottom */
+    .sb-bottom {
+      padding: 7px 10px 9px;
+      border-top: 1px solid var(--border);
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+      margin-top: 2px;
+    }
+    .user-row:hover { background: var(--hover-bg); }
+    .user-ava {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF7043, #FFB300);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; color: white; flex-shrink: 0;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12.5px; font-weight: 500; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 10.5px; color: var(--text-faint); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-chev { color: var(--text-faint); flex-shrink: 0; }
+
+    /* ═══ WORKSPACE SWITCHER POPUP ═══ */
+    .ws-popup {
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 8px;
+      width: 240px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-med);
+      z-index: 200;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(-6px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.16s cubic-bezier(0.16,1,0.3,1), transform 0.16s cubic-bezier(0.16,1,0.3,1);
+    }
+    .ws-popup.open {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: all;
+    }
+
+    .popup-ws-list { padding: 6px; }
+    .popup-ws-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .popup-ws-row:hover { background: var(--hover-bg); }
+    .popup-ws-ava { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; flex-shrink: 0; }
+    .popup-ws-info { flex: 1; min-width: 0; }
+    .popup-ws-name { font-size: 12.5px; font-weight: 500; }
+    .popup-ws-meta { font-size: 10.5px; color: var(--text-faint); }
+    .popup-check { color: var(--accent); flex-shrink: 0; }
+
+    /* ═══ ACCOUNT POPUP ═══ */
+    .acct-popup {
+      position: absolute;
+      left: calc(100% + 8px);
+      bottom: 8px;
+      width: 236px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-med);
+      z-index: 200;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(-6px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 0.16s cubic-bezier(0.16,1,0.3,1), transform 0.16s cubic-bezier(0.16,1,0.3,1);
+    }
+    .acct-popup.open {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: all;
+    }
+
+    .popup-user { padding: 8px 13px; border-bottom: 1px solid var(--border); }
+    .popup-uname { font-size: 13px; font-weight: 500; }
+    .popup-uemail { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+
+    .popup-menu { padding: 6px; }
+    .pm-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      transition: background 0.12s;
+    }
+    .pm-row:hover { background: var(--hover-bg); }
+    .pm-row svg { color: var(--text-muted); flex-shrink: 0; }
+    .pm-row.green { background: rgba(56,161,105,0.08); color: #276749; }
+    .pm-row.green:hover { background: rgba(56,161,105,0.14); }
+    .green-dot { width: 7px; height: 7px; border-radius: 50%; background: #38A169; flex-shrink: 0; }
+
+    .popup-footer { padding: 7px 13px 9px; border-top: 1px solid var(--border); }
+    .popup-ver { font-size: 10.5px; color: var(--text-faint); }
+
+    /* ═══ MAIN CONTENT ═══ */
+    .main {
+      flex: 1;
+      min-width: 0;
+      background: var(--main-bg);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Views */
+    .view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+    .view.active { display: flex; }
+
+    /* ─── CHAT VIEW ─── */
+    .chat-hdr {
+      padding: 14px 22px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      flex-shrink: 0;
+    }
+    .chat-hdr-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent);
+    }
+    .chat-hdr-text h2 { font-size: 15px; font-weight: 600; }
+    .chat-hdr-text p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    .chat-progress {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .prog-dots { display: flex; gap: 4px; }
+    .prog-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--border-med);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .prog-dot.done { background: var(--accent); }
+    .prog-dot.current { background: var(--accent); transform: scale(1.35); }
+    .prog-lbl { font-size: 11px; color: var(--text-faint); min-width: 40px; text-align: right; }
+
+    .chat-msgs {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-med) transparent;
+    }
+    .chat-msgs::-webkit-scrollbar { width: 4px; }
+    .chat-msgs::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+    /* AI message */
+    .ai-msg {
+      display: flex; gap: 9px; align-items: flex-start;
+      max-width: 82%;
+      animation: msgIn 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    .ai-ava {
+      width: 29px; height: 29px; border-radius: 50%;
+      background: linear-gradient(135deg, #6B4EFF 0%, #A88BFF 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0; margin-top: 1px;
+    }
+    .ai-bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px 13px 13px 13px;
+      padding: 10px 13px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+    .ai-bubble p + p { margin-top: 5px; }
+
+    /* Chips */
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border-med);
+      background: var(--surface);
+      font-size: 12.5px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: border-color 0.13s, background 0.13s, color 0.13s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-light); }
+    .chip.picked { border-color: var(--accent); color: var(--accent-text); background: var(--accent-light); pointer-events: none; }
+    .chip:disabled { pointer-events: none; opacity: 0.5; }
+
+    /* User message */
+    .user-msg {
+      display: flex; justify-content: flex-end;
+      animation: msgIn 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    .user-bubble {
+      background: var(--accent);
+      color: white;
+      border-radius: 13px 4px 13px 13px;
+      padding: 10px 13px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      max-width: 78%;
+    }
+
+    /* Typing indicator */
+    .typing-msg {
+      display: flex; gap: 9px; align-items: center;
+      animation: msgIn 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    .typing-dots {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px 13px 13px 13px;
+      padding: 11px 14px;
+      display: flex; gap: 4px; align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .t-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-faint);
+      animation: tdot 1.2s infinite;
+    }
+    .t-dot:nth-child(2) { animation-delay: 0.18s; }
+    .t-dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes tdot {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Summary card */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-top: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+    .sum-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+    .sum-title { font-size: 14px; font-weight: 600; }
+    .sum-badge { background: rgba(56,161,105,0.1); color: #276749; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+    .sum-rows { display: flex; flex-direction: column; gap: 8px; }
+    .sum-row { display: flex; gap: 10px; align-items: flex-start; }
+    .sum-key { font-size: 11.5px; color: var(--text-faint); min-width: 90px; padding-top: 1px; flex-shrink: 0; }
+    .sum-val { font-size: 13px; color: var(--text); font-weight: 500; line-height: 1.45; }
+    .sum-actions { margin-top: 14px; display: flex; gap: 8px; }
+    .act-btn {
+      padding: 8px 15px; border-radius: var(--radius-sm);
+      font-size: 12.5px; font-weight: 500;
+      cursor: pointer; border: none; font-family: 'Inter', sans-serif;
+      transition: opacity 0.13s;
+    }
+    .act-btn:hover { opacity: 0.85; }
+    .act-primary { background: var(--accent); color: white; }
+    .act-ghost { background: var(--hover-bg); color: var(--text-muted); border: 1px solid var(--border-med); }
+
+    /* Chat input */
+    .chat-input-wrap {
+      padding: 10px 22px 14px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--main-bg);
+      border: 1px solid var(--border-med);
+      border-radius: 11px;
+      padding: 7px 8px 7px 13px;
+      transition: border-color 0.13s;
+    }
+    .chat-input-row:focus-within { border-color: var(--accent); }
+    .chat-input-row input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: 13.5px; font-family: 'Inter', sans-serif; color: var(--text);
+    }
+    .chat-input-row input::placeholder { color: var(--text-faint); }
+    .send-btn {
+      width: 29px; height: 29px; border-radius: 8px;
+      background: var(--accent); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.13s; color: white; flex-shrink: 0;
+    }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { background: var(--border-med); cursor: not-allowed; opacity: 1; }
+    .send-btn:disabled svg { color: var(--text-faint); }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(7px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── GENERIC VIEW SHELL ─── */
+    .v-hdr {
+      padding: 14px 22px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .v-hdr h2 { font-size: 16px; font-weight: 600; }
+    .v-hdr p  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .v-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 22px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-med) transparent;
+    }
+    .v-body::-webkit-scrollbar { width: 4px; }
+    .v-body::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
+
+    /* ─── HISTORY VIEW ─── */
+    .hist-list { display: flex; flex-direction: column; gap: 8px; }
+    .hist-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 15px;
+      cursor: pointer;
+      transition: border-color 0.13s, box-shadow 0.13s;
+    }
+    .hist-card:hover { border-color: var(--border-med); box-shadow: var(--shadow-sm); }
+    .hist-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .hist-title { font-size: 13.5px; font-weight: 500; }
+    .hist-date  { font-size: 11px; color: var(--text-faint); }
+    .hist-prev  { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .tag-row { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+    .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 20px; background: var(--hover-bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* ─── PINNED VIEW ─── */
+    .pin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .pin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px;
+      cursor: pointer;
+      transition: border-color 0.13s, box-shadow 0.13s;
+    }
+    .pin-card:hover { border-color: var(--border-med); box-shadow: var(--shadow-sm); }
+    .pin-ico { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 9px; }
+    .pin-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+    .pin-meta  { font-size: 11px; color: var(--text-faint); }
+
+    /* ─── TEMPLATES VIEW ─── */
+    .tmpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .tmpl-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    }
+    .tmpl-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(107,78,255,0.1); transform: translateY(-2px); }
+    .tmpl-ico { font-size: 22px; margin-bottom: 9px; }
+    .tmpl-name { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+    .tmpl-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+    .tmpl-meta { margin-top: 9px; font-size: 11px; color: var(--text-faint); }
+
+    /* ─── PROMPTS VIEW ─── */
+    .prmp-list { display: flex; flex-direction: column; gap: 8px; }
+    .prmp-row {
+      display: flex; align-items: flex-start; gap: 11px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 15px;
+      cursor: pointer;
+      transition: border-color 0.13s;
+    }
+    .prmp-row:hover { border-color: var(--border-med); }
+    .prmp-num { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-light); width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .prmp-text { font-size: 13px; color: var(--text); line-height: 1.45; }
+    .prmp-meta { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+
+    /* ─── CLIENT VIEW ─── */
+    .client-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .client-top { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
+    .client-ava { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: white; flex-shrink: 0; }
+    .client-n { font-size: 15px; font-weight: 600; }
+    .client-t { font-size: 12px; color: var(--text-faint); }
+    .client-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .cst { text-align: center; padding: 9px; background: var(--main-bg); border-radius: var(--radius-sm); }
+    .cst-v { font-size: 17px; font-weight: 600; }
+    .cst-k { font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+    .sub-hdr { font-size: 11px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .cl-chat-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: border-color 0.13s;
+    }
+    .cl-chat-row:hover { border-color: var(--border-med); }
+    .cl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .cl-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .cl-date { font-size: 11px; color: var(--text-faint); }
+
+    /* Empty state */
+    .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 220px; gap: 8px; color: var(--text-faint); }
+    .empty svg { opacity: 0.25; }
+    .empty p { font-size: 13px; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 640px) {
+      .app { padding: 0; gap: 0; }
+      .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; transform: translateX(-100%); transition: transform 0.25s; border-radius: 0; }
+      .sidebar.open { transform: translateX(0); }
+      .main { border-radius: 0; }
+      .acct-popup { left: 8px; bottom: 56px; }
+      .ws-popup { left: 8px; top: 56px; }
+      .collapse-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Collapse toggle -->
+    <button class="collapse-btn" id="collapseBtn" title="Toggle sidebar">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+
+    <!-- Workspace switcher popup -->
+    <div class="ws-popup" id="wsPopup">
+      <div class="popup-ws-list">
+        <div class="popup-ws-row">
+          <div class="popup-ws-ava" style="background:#E53E3E;">M</div>
+          <div class="popup-ws-info">
+            <div class="popup-ws-name">Mercedes</div>
+            <div class="popup-ws-meta">Team Plan · 4.5k members</div>
+          </div>
+        </div>
+        <div class="popup-ws-row">
+          <div class="popup-ws-ava" style="background:#718096;">S</div>
+          <div class="popup-ws-info">
+            <div class="popup-ws-name">Sandra</div>
+            <div class="popup-ws-meta">Personal Plan · 1 member</div>
+          </div>
+        </div>
+        <div class="popup-ws-row">
+          <div class="popup-ws-ava" style="background:linear-gradient(135deg,#6B4EFF,#A88BFF);">V</div>
+          <div class="popup-ws-info">
+            <div class="popup-ws-name">Veyra</div>
+            <div class="popup-ws-meta">Team Plan · 40 members</div>
+          </div>
+          <svg class="popup-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="popup-ws-row">
+          <div class="popup-ws-ava" style="background:#DD6B20;">F</div>
+          <div class="popup-ws-info">
+            <div class="popup-ws-name">Figma</div>
+            <div class="popup-ws-meta">Team Plan · 556 members</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account popup -->
+    <div class="acct-popup" id="acctPopup">
+      <div class="popup-user">
+        <div class="popup-uname">Alex Rivera</div>
+        <div class="popup-uemail">alex@gmail.com</div>
+      </div>
+      <div class="popup-menu">
+        <div class="pm-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Integrations
+        </div>
+        <div class="pm-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </div>
+        <div class="pm-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Upgrade to Pro
+        </div>
+        <div class="pm-row green">
+          <span class="green-dot"></span>
+          Update App
+        </div>
+        <div class="pm-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </div>
+      </div>
+      <div class="popup-footer">
+        <div class="popup-ver">v1.5.69 · Terms &amp; Conditions</div>
+      </div>
+    </div>
+
+    <!-- Workspace header -->
+    <div class="ws-header">
+      <div class="ws-btn" id="wsBtn">
+        <div class="ws-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="ws-info">
+          <div class="ws-name">Veyra</div>
+          <div class="ws-plan">Team Plan</div>
+        </div>
+        <svg class="ws-chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="sb-search">
+      <div class="search-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="search-placeholder">Search</span>
+        <span class="search-kbd">⌘K</span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="sb-nav">
+
+      <div class="ni active" data-view="inbox">
+        <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+        <span class="ni-label">Inbox</span>
+        <span class="ni-sc">⌘2</span>
+        <span class="ni-badge">3</span>
+      </div>
+
+      <div class="ni" data-view="history">
+        <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+        <span class="ni-label">Activity</span>
+        <span class="ni-sc">⌘3</span>
+      </div>
+
+      <div class="ni" data-view="pinned">
+        <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span class="ni-label">Schedule</span>
+        <span class="ni-sc">⌘4</span>
+      </div>
+
+      <!-- Shared -->
+      <div class="sb-section">
+        <div class="sec-hdr">
+          <span class="sec-title">Shared</span>
+          <span class="sec-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </div>
+        <div class="ni" data-view="templates">
+          <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 13 9 20 9"/><path d="M20 9L13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/></svg></span>
+          <span class="ni-label">Boosts</span>
+        </div>
+        <div class="ni" data-view="prompts">
+          <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+          <span class="ni-label">Documents</span>
+        </div>
+      </div>
+
+      <!-- Projects -->
+      <div class="sb-section">
+        <div class="sec-hdr">
+          <span class="sec-title">Projects</span>
+          <span class="sec-add"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+        </div>
+        <div class="ni" data-view="client-acme">
+          <span class="proj-dot" style="background:#38A169;"></span>
+          <span class="ni-label">Personal</span>
+        </div>
+        <div class="ni" data-view="client-techstart">
+          <span class="proj-dot" style="background:#4299E1;"></span>
+          <span class="ni-label">Business</span>
+        </div>
+        <div class="ni" data-view="client-creative">
+          <span class="proj-dot" style="background:#9F7AEA;"></span>
+          <span class="ni-label">Travel</span>
+        </div>
+        <div class="add-row">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add New Project</span>
+        </div>
+      </div>
+
+    </div><!-- /sb-nav -->
+
+    <!-- Bottom -->
+    <div class="sb-bottom">
+      <div class="ni" data-view="settings">
+        <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span class="ni-label">Settings</span>
+      </div>
+      <div class="ni" data-view="help">
+        <span class="ni-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span class="ni-label">Help</span>
+      </div>
+      <div class="user-row" id="userRow">
+        <div class="user-ava">AR</div>
+        <div class="user-info">
+          <div class="user-name">Alex Rivera</div>
+          <div class="user-email">alex@gmail.com</div>
+        </div>
+        <svg class="user-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+
+  </aside>
+
+
+  <!-- ══════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════ -->
+  <main class="main">
+
+    <!-- ── INBOX / CHAT ── -->
+    <div class="view active" id="view-inbox">
+      <div class="chat-hdr">
+        <div class="chat-hdr-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="chat-hdr-text">
+          <h2 id="chatTitle">Veyra Assistant</h2>
+          <p id="chatSubtitle">Your business intelligence companion</p>
+        </div>
+        <div class="chat-progress" id="progressArea">
+          <div class="prog-dots" id="progDots">
+            <div class="prog-dot current"></div>
+            <div class="prog-dot"></div>
+            <div class="prog-dot"></div>
+            <div class="prog-dot"></div>
+            <div class="prog-dot"></div>
+          </div>
+          <span class="prog-lbl" id="progLbl">1 of 5</span>
+        </div>
+      </div>
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="chat-input-wrap">
+        <div class="chat-input-row">
+          <input type="text" id="chatIn" placeholder="Message Veyra…" autocomplete="off">
+          <button class="send-btn" id="sendBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ACTIVITY ── -->
+    <div class="view" id="view-history">
+      <div class="v-hdr"><h2>Activity</h2><p>Your recent sessions and conversations</p></div>
+      <div class="v-body">
+        <div class="hist-list">
+          <div class="hist-card">
+            <div class="hist-top"><span class="hist-title">Business Overview — Initial Session</span><span class="hist-date">Mar 26</span></div>
+            <div class="hist-prev">Discussed expansion into the European market and regulatory compliance challenges. Budget confirmed at $20–50k range.</div>
+            <div class="tag-row"><span class="tag">Enterprise</span><span class="tag">$20–50k</span><span class="tag">ASAP</span></div>
+          </div>
+          <div class="hist-card">
+            <div class="hist-top"><span class="hist-title">Hiring Pipeline Strategy</span><span class="hist-date">Mar 22</span></div>
+            <div class="hist-prev">Early-stage startup looking to streamline their hiring process. Exploring AI-driven candidate screening within 3 months.</div>
+            <div class="tag-row"><span class="tag">Startup</span><span class="tag">$5–20k</span><span class="tag">1–3 months</span></div>
+          </div>
+          <div class="hist-card">
+            <div class="hist-top"><span class="hist-title">Client Onboarding Automation</span><span class="hist-date">Mar 18</span></div>
+            <div class="hist-prev">Agency exploring options to automate client onboarding and monthly reporting workflows. Just getting started.</div>
+            <div class="tag-row"><span class="tag">Agency</span><span class="tag">&lt;$5k</span><span class="tag">Exploring</span></div>
+          </div>
+          <div class="hist-card">
+            <div class="hist-top"><span class="hist-title">Churn Reduction Deep Dive</span><span class="hist-date">Mar 14</span></div>
+            <div class="hist-prev">Mid-market SaaS struggling with customer churn. Explored analytics, intervention triggers, and customer success strategies.</div>
+            <div class="tag-row"><span class="tag">SaaS</span><span class="tag">$50k+</span><span class="tag">3–6 months</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCHEDULE ── -->
+    <div class="view" id="view-pinned">
+      <div class="v-hdr"><h2>Schedule</h2><p>Upcoming sessions and planned follow-ups</p></div>
+      <div class="v-body">
+        <div class="pin-grid">
+          <div class="pin-card">
+            <div class="pin-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="pin-title">Q2 Business Review</div>
+            <div class="pin-meta">Apr 3 · 2:00 PM</div>
+          </div>
+          <div class="pin-card">
+            <div class="pin-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="pin-title">Strategy Session</div>
+            <div class="pin-meta">Apr 7 · 10:00 AM</div>
+          </div>
+          <div class="pin-card">
+            <div class="pin-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div class="pin-title">Proposal Follow-up</div>
+            <div class="pin-meta">Apr 10 · 3:30 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BOOSTS ── -->
+    <div class="view" id="view-templates">
+      <div class="v-hdr"><h2>Boosts</h2><p>Pre-built conversation flows to jumpstart your sessions</p></div>
+      <div class="v-body">
+        <div class="tmpl-grid">
+          <div class="tmpl-card" data-template="Business Overview">
+            <div class="tmpl-ico">🔍</div>
+            <div class="tmpl-name">Business Overview</div>
+            <div class="tmpl-desc">Map out your business in 5 focused questions — goals, challenges, and what success looks like.</div>
+            <div class="tmpl-meta">5 questions · ~3 min</div>
+          </div>
+          <div class="tmpl-card" data-template="Challenge Mapping">
+            <div class="tmpl-ico">🎯</div>
+            <div class="tmpl-name">Challenge Mapping</div>
+            <div class="tmpl-desc">Dig into a specific business problem with structured prompts to surface root causes and solutions.</div>
+            <div class="tmpl-meta">4 questions · ~2 min</div>
+          </div>
+          <div class="tmpl-card" data-template="Idea Validation">
+            <div class="tmpl-ico">💡</div>
+            <div class="tmpl-name">Idea Validation</div>
+            <div class="tmpl-desc">Test a new business idea against market fit, feasibility, and your existing resources.</div>
+            <div class="tmpl-meta">6 questions · ~4 min</div>
+          </div>
+          <div class="tmpl-card" data-template="Growth Planning">
+            <div class="tmpl-ico">🚀</div>
+            <div class="tmpl-name">Growth Planning</div>
+            <div class="tmpl-desc">Build a 90-day roadmap based on your goals, team capacity, and available budget.</div>
+            <div class="tmpl-meta">7 questions · ~5 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DOCUMENTS ── -->
+    <div class="view" id="view-prompts">
+      <div class="v-hdr"><h2>Documents</h2><p>Saved outputs and generated reports</p></div>
+      <div class="v-body">
+        <div class="prmp-list">
+          <div class="prmp-row">
+            <div class="prmp-num">1</div>
+            <div>
+              <div class="prmp-text">Business Overview — Alex Rivera · Summarized top challenges and a 6-month success roadmap.</div>
+              <div class="prmp-meta">Generated Mar 25 · 3 min read</div>
+            </div>
+          </div>
+          <div class="prmp-row">
+            <div class="prmp-num">2</div>
+            <div>
+              <div class="prmp-text">Idea Validation Report — E-commerce expansion into EU markets with regulatory analysis.</div>
+              <div class="prmp-meta">Generated Mar 23 · 5 min read</div>
+            </div>
+          </div>
+          <div class="prmp-row">
+            <div class="prmp-num">3</div>
+            <div>
+              <div class="prmp-text">90-Day Growth Plan — Hiring pipeline automation with milestone checkpoints.</div>
+              <div class="prmp-meta">Generated Mar 20 · 4 min read</div>
+            </div>
+          </div>
+          <div class="prmp-row">
+            <div class="prmp-num">4</div>
+            <div>
+              <div class="prmp-text">Challenge Brief — Customer churn reduction strategy for SaaS product.</div>
+              <div class="prmp-meta">Generated Mar 15 · 6 min read</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROJECT: PERSONAL ── -->
+    <div class="view" id="view-client-acme">
+      <div class="v-hdr"><h2>Personal</h2><p>Personal projects and goals</p></div>
+      <div class="v-body">
+        <div class="client-card">
+          <div class="client-top">
+            <div class="client-ava" style="background:#38A169;">P</div>
+            <div><div class="client-n">Personal</div><div class="client-t">Private · 1 member</div></div>
+          </div>
+          <div class="client-stats">
+            <div class="cst"><div class="cst-v">4</div><div class="cst-k">Sessions</div></div>
+            <div class="cst"><div class="cst-v">3</div><div class="cst-k">Docs</div></div>
+            <div class="cst"><div class="cst-v">Active</div><div class="cst-k">Status</div></div>
+          </div>
+        </div>
+        <div class="sub-hdr">Recent Chats</div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#38A169;"></div><div class="cl-name">Career Direction Chat</div><div class="cl-date">Mar 26</div></div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#A3A3A3;"></div><div class="cl-name">Side Project Brainstorm</div><div class="cl-date">Mar 21</div></div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#A3A3A3;"></div><div class="cl-name">Financial Goal Planning</div><div class="cl-date">Mar 17</div></div>
+      </div>
+    </div>
+
+    <!-- ── PROJECT: BUSINESS ── -->
+    <div class="view" id="view-client-techstart">
+      <div class="v-hdr"><h2>Business</h2><p>Business strategy and operations</p></div>
+      <div class="v-body">
+        <div class="client-card">
+          <div class="client-top">
+            <div class="client-ava" style="background:#4299E1;">B</div>
+            <div><div class="client-n">Business</div><div class="client-t">Team · 5 members</div></div>
+          </div>
+          <div class="client-stats">
+            <div class="cst"><div class="cst-v">8</div><div class="cst-k">Sessions</div></div>
+            <div class="cst"><div class="cst-v">6</div><div class="cst-k">Docs</div></div>
+            <div class="cst"><div class="cst-v">Active</div><div class="cst-k">Status</div></div>
+          </div>
+        </div>
+        <div class="sub-hdr">Recent Chats</div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#4299E1;"></div><div class="cl-name">Q2 Strategy Session</div><div class="cl-date">Mar 22</div></div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#A3A3A3;"></div><div class="cl-name">Hiring Plan Review</div><div class="cl-date">Mar 18</div></div>
+      </div>
+    </div>
+
+    <!-- ── PROJECT: TRAVEL ── -->
+    <div class="view" id="view-client-creative">
+      <div class="v-hdr"><h2>Travel</h2><p>Trip planning and logistics</p></div>
+      <div class="v-body">
+        <div class="client-card">
+          <div class="client-top">
+            <div class="client-ava" style="background:#9F7AEA;">T</div>
+            <div><div class="client-n">Travel</div><div class="client-t">Personal · 1 member</div></div>
+          </div>
+          <div class="client-stats">
+            <div class="cst"><div class="cst-v">2</div><div class="cst-k">Sessions</div></div>
+            <div class="cst"><div class="cst-v">1</div><div class="cst-k">Docs</div></div>
+            <div class="cst"><div class="cst-v">Planning</div><div class="cst-k">Status</div></div>
+          </div>
+        </div>
+        <div class="sub-hdr">Recent Chats</div>
+        <div class="cl-chat-row"><div class="cl-dot" style="background:#9F7AEA;"></div><div class="cl-name">Europe Itinerary Planning</div><div class="cl-date">Mar 18</div></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="view" id="view-settings">
+      <div class="v-hdr"><h2>Settings</h2><p>Manage your workspace preferences</p></div>
+      <div class="v-body"><div class="empty"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><p>Settings coming soon</p></div></div>
+    </div>
+
+    <!-- ── HELP ── -->
+    <div class="view" id="view-help">
+      <div class="v-hdr"><h2>Help</h2><p>Resources and documentation</p></div>
+      <div class="v-body"><div class="empty"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>Help center coming soon</p></div></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ────────────────────────────────────────────
+//  NAVIGATION
+// ────────────────────────────────────────────
+const navItems = document.querySelectorAll('[data-view]');
+const views    = document.querySelectorAll('.view');
+
+function switchView(id) {
+  views.forEach(v => v.classList.remove('active'));
+  navItems.forEach(n => n.classList.remove('active'));
+  const view = document.getElementById('view-' + id);
+  const nav  = document.querySelector('[data-view="' + id + '"]');
+  if (view) view.classList.add('active');
+  if (nav)  nav.classList.add('active');
+}
+
+navItems.forEach(el => {
+  el.addEventListener('click', () => {
+    switchView(el.dataset.view);
+    closeAllPopups();
+  });
+});
+
+// Boost cards → start a new chat
+document.querySelectorAll('[data-template]').forEach(card => {
+  card.addEventListener('click', () => {
+    switchView('inbox');
+    resetChat();
+  });
+});
+
+// ────────────────────────────────────────────
+//  SIDEBAR COLLAPSE
+// ────────────────────────────────────────────
+const sidebar     = document.getElementById('sidebar');
+const collapseBtn = document.getElementById('collapseBtn');
+
+collapseBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  sidebar.classList.toggle('collapsed');
+  closeAllPopups();
+});
+
+// ────────────────────────────────────────────
+//  WORKSPACE SWITCHER POPUP
+// ────────────────────────────────────────────
+const wsPopup = document.getElementById('wsPopup');
+const wsBtn   = document.getElementById('wsBtn');
+
+function openWsPopup()  { wsPopup.classList.add('open'); wsBtn.classList.add('popup-open'); }
+function closeWsPopup() { wsPopup.classList.remove('open'); wsBtn.classList.remove('popup-open'); }
+function toggleWsPopup(){ wsPopup.classList.contains('open') ? closeWsPopup() : openWsPopup(); }
+
+wsBtn.addEventListener('click', e => { e.stopPropagation(); closeAcctPopup(); toggleWsPopup(); });
+wsPopup.addEventListener('click', e => e.stopPropagation());
+
+// ────────────────────────────────────────────
+//  ACCOUNT POPUP
+// ────────────────────────────────────────────
+const acctPopup = document.getElementById('acctPopup');
+const userRow   = document.getElementById('userRow');
+
+function openAcctPopup()  { acctPopup.classList.add('open'); }
+function closeAcctPopup() { acctPopup.classList.remove('open'); }
+function toggleAcctPopup(){ acctPopup.classList.contains('open') ? closeAcctPopup() : openAcctPopup(); }
+
+userRow.addEventListener('click', e => { e.stopPropagation(); closeWsPopup(); toggleAcctPopup(); });
+acctPopup.addEventListener('click', e => e.stopPropagation());
+
+function closeAllPopups() {
+  closeWsPopup();
+  closeAcctPopup();
+}
+
+document.addEventListener('click',   () => closeAllPopups());
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAllPopups(); });
+
+// ────────────────────────────────────────────
+//  CHAT — VEYRA BUSINESS ASSISTANT
+// ────────────────────────────────────────────
+
+// Chat state
+let mode    = 'intro';   // 'intro' | 'onboarding' | 'chat'
+let step    = 0;
+let answers = [];
+let locked  = false;
+
+const chatMsgs    = document.getElementById('chatMsgs');
+const chatIn      = document.getElementById('chatIn');
+const sendBtn     = document.getElementById('sendBtn');
+const progDots    = document.getElementById('progDots').querySelectorAll('.prog-dot');
+const progLbl     = document.getElementById('progLbl');
+const progressArea = document.getElementById('progressArea');
+
+// Onboarding questions
+const ONBOARDING = [
+  { text: "Let's start with the basics — what's your company name and what do you do?", placeholder: "e.g. Acme Corp — we build B2B logistics software", chips: null },
+  { text: "Great! What's the biggest challenge you're facing right now?\n\nDon't hold back — the more specific, the better.", placeholder: "e.g. Struggling to scale sales without losing quality", chips: null },
+  { text: "Got it. What does success look like for you in the next 6 months?\n\nThink big.", placeholder: "e.g. 3× revenue, a repeatable process, 90% retention", chips: null },
+  { text: "Almost there — what's your approximate budget for solving this?", placeholder: "Pick one below or type your own", chips: ["< $5k", "$5–20k", "$20–50k", "$50k+"] },
+  { text: "Last one — when are you looking to get started?", placeholder: "Pick one or type your timeline", chips: ["ASAP", "1–3 months", "3–6 months", "Just exploring"] }
+];
+
+// Free chat responses (contextual, keyword-based)
+const CHAT_RESPONSES = [
+  { keywords: ['revenue', 'sales', 'grow', 'growth'], reply: "Growth is usually a combination of more acquisition, better retention, and increased deal size. Which of those feels most off right now? That'll help me focus in on what matters most for you." },
+  { keywords: ['hire', 'team', 'people', 'hiring', 'talent'], reply: "Building a great team is one of the highest-leverage things you can do. Are you looking to hire for a specific gap you've identified, or are you still figuring out where the bottleneck is?" },
+  { keywords: ['churn', 'retention', 'losing', 'cancel'], reply: "Churn usually has a clear root cause — it's either an expectation mismatch, a product gap, or a relationship gap. Which of those resonates most with what you're seeing?" },
+  { keywords: ['idea', 'launch', 'new product', 'build', 'start'], reply: "New ideas are exciting. Before diving in, the most useful thing to do is stress-test the assumptions. What's the one thing that would have to be true for this to work?" },
+  { keywords: ['strategy', 'plan', 'roadmap', 'direction'], reply: "A solid strategy starts with clarity on where you're going, then works backwards to what needs to be true. What's your 12-month north star? Revenue target, product milestone, market position?" },
+  { keywords: ['compete', 'competitor', 'market', 'position'], reply: "Competitive positioning is less about features and more about who you serve best. Who is your ideal customer, and what's the one thing you do for them that nobody else does as well?" },
+  { keywords: ['money', 'budget', 'fund', 'invest', 'capital'], reply: "Before thinking about funding, it's worth getting clear on what you'd do with it. What would change in the business if you had 2× the resources you have now?" },
+];
+const FALLBACK_RESPONSES = [
+  "That's a really important area to dig into. Can you tell me more about what's driving that — is it a recent change, or something that's been building for a while?",
+  "Interesting. Let me ask you this — if you had to pick the single biggest thing holding your business back right now, what would it be?",
+  "Got it. And what have you already tried to address this? Knowing what hasn't worked is usually just as valuable as knowing what has.",
+  "That makes sense. What does your gut tell you is the real root cause here?",
+  "I hear you. What would the ideal outcome look like — not just a fix, but the actual state you want to be in 6 months from now?"
+];
+let fallbackIndex = 0;
+
+function getChatReply(text) {
+  const lower = text.toLowerCase();
+  for (const r of CHAT_RESPONSES) {
+    if (r.keywords.some(k => lower.includes(k))) return r.reply;
+  }
+  const reply = FALLBACK_RESPONSES[fallbackIndex % FALLBACK_RESPONSES.length];
+  fallbackIndex++;
+  return reply;
+}
+
+function updateProgress() {
+  progDots.forEach((d, i) => {
+    d.classList.remove('done', 'current');
+    if (i < step)                   d.classList.add('done');
+    else if (i === step && step < 5) d.classList.add('current');
+  });
+  progLbl.textContent = step < 5 ? (step + 1) + ' of 5' : 'Complete!';
+}
+
+function scrollDown() {
+  chatMsgs.scrollTo({ top: chatMsgs.scrollHeight, behavior: 'smooth' });
+}
+
+function addAI(text, chips) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-msg';
+  const lines   = text.split('\n').filter(l => l.trim());
+  const content = lines.map(l => `<p>${l}</p>`).join('');
+  let chipsHtml = '';
+  if (chips && chips.length) {
+    const btns = chips.map(c =>
+      `<button class="chip" data-val="${c.replace(/"/g, '&quot;')}">${c}</button>`
+    ).join('');
+    chipsHtml = `<div class="chip-row">${btns}</div>`;
+  }
+  wrap.innerHTML = `
+    <div class="ai-ava">✦</div>
+    <div><div class="ai-bubble">${content}${chipsHtml}</div></div>
+  `;
+  chatMsgs.appendChild(wrap);
+  scrollDown();
+}
+
+function addUser(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'user-msg';
+  wrap.innerHTML = `<div class="user-bubble">${text}</div>`;
+  chatMsgs.appendChild(wrap);
+  scrollDown();
+}
+
+function showTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'typing-msg';
+  wrap.id = 'typing';
+  wrap.innerHTML = `
+    <div class="ai-ava">✦</div>
+    <div class="typing-dots">
+      <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+    </div>`;
+  chatMsgs.appendChild(wrap);
+  scrollDown();
+  return wrap;
+}
+
+// Chip click delegation
+chatMsgs.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip || locked) return;
+  chip.closest('.chip-row').querySelectorAll('.chip').forEach(c => { c.disabled = true; });
+  chip.classList.add('picked');
+  submit(chip.dataset.val);
+});
+
+function submit(text) {
+  text = (text || '').trim();
+  if (!text || locked) return;
+  locked = true;
+  chatIn.value = '';
+
+  if (mode === 'intro') {
+    addUser(text);
+    const t = showTyping();
+    setTimeout(() => {
+      t.remove();
+      if (text === 'Give me a business overview') {
+        mode = 'onboarding';
+        step = 0;
+        answers = [];
+        progressArea.style.display = 'flex';
+        updateProgress();
+        document.getElementById('chatSubtitle').textContent = 'Business overview — 5 questions';
+        addAI(ONBOARDING[0].text, ONBOARDING[0].chips);
+        chatIn.placeholder = ONBOARDING[0].placeholder;
+      } else {
+        mode = 'chat';
+        progressArea.style.display = 'none';
+        document.getElementById('chatSubtitle').textContent = 'Open business chat';
+        const replies = {
+          'Help me with a challenge': "Let's get into it. What's the challenge? Give me as much context as you can — what's happening, and what have you already tried?",
+          'Explore a new idea':       "I love it. Tell me about the idea — what is it, who's it for, and what made you think of it?",
+          'Just let me ask freely':   "Perfect. I'm all ears. What's on your mind?"
+        };
+        addAI(replies[text] || "Tell me what's on your mind — I'm here to help.", null);
+        chatIn.placeholder = 'Ask Veyra anything…';
+      }
+      locked = false;
+      chatIn.focus();
+    }, 850);
+    return;
+  }
+
+  if (mode === 'onboarding') {
+    answers.push(text);
+    addUser(text);
+    step++;
+    updateProgress();
+    const t = showTyping();
+    setTimeout(() => {
+      t.remove();
+      if (step < ONBOARDING.length) {
+        const q = ONBOARDING[step];
+        addAI(q.text, q.chips);
+        chatIn.placeholder = q.placeholder;
+      } else {
+        showSummary();
+      }
+      locked = false;
+      chatIn.focus();
+    }, 950);
+    return;
+  }
+
+  if (mode === 'chat') {
+    addUser(text);
+    const t = showTyping();
+    setTimeout(() => {
+      t.remove();
+      addAI(getChatReply(text), null);
+      locked = false;
+      chatIn.focus();
+    }, 950);
+  }
+}
+
+function showSummary() {
+  const keys = ['Company', 'Challenge', 'Success', 'Budget', 'Timeline'];
+  const rows = keys.map((k, i) => `
+    <div class="sum-row">
+      <div class="sum-key">${k}</div>
+      <div class="sum-val">${answers[i] || '—'}</div>
+    </div>`).join('');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-msg';
+  wrap.style.maxWidth = '90%';
+  wrap.innerHTML = `
+    <div class="ai-ava">✦</div>
+    <div>
+      <div class="ai-bubble"><p>That's everything I need to build a tailored plan for you. Here's a summary of what we covered.</p></div>
+      <div class="summary-card">
+        <div class="sum-hdr">
+          <span class="sum-title">Business Overview</span>
+          <span class="sum-badge">Complete</span>
+        </div>
+        <div class="sum-rows">${rows}</div>
+        <div class="sum-actions">
+          <button class="act-btn act-primary" id="genBtn">Generate Plan</button>
+          <button class="act-btn act-ghost"    id="resetBtn">Start Over</button>
+        </div>
+      </div>
+    </div>`;
+  chatMsgs.appendChild(wrap);
+
+  chatIn.disabled = true;
+  sendBtn.disabled = true;
+  chatIn.placeholder = 'Overview complete — generate your plan above';
+  scrollDown();
+
+  wrap.querySelector('#genBtn').addEventListener('click', () => {
+    alert('Generating your personalized business plan… (Coming soon!)');
+  });
+  wrap.querySelector('#resetBtn').addEventListener('click', resetChat);
+}
+
+function resetChat() {
+  mode = 'intro'; step = 0; answers = []; locked = false; fallbackIndex = 0;
+  chatMsgs.innerHTML = '';
+  chatIn.disabled = false;
+  sendBtn.disabled = false;
+  progressArea.style.display = 'none';
+  document.getElementById('chatTitle').textContent    = 'Veyra Assistant';
+  document.getElementById('chatSubtitle').textContent = 'Your business intelligence companion';
+  chatIn.placeholder = 'Message Veyra…';
+  addAI(
+    "Hey! I'm Veyra — your business intelligence assistant. I can help you map out your business, brainstorm strategy, or just answer questions as you go.\n\nHow would you like to start?",
+    ["Give me a business overview", "Help me with a challenge", "Explore a new idea", "Just let me ask freely"]
+  );
+  chatIn.focus();
+}
+
+// Send on button
+sendBtn.addEventListener('click', () => submit(chatIn.value));
+
+// Send on Enter
+chatIn.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(chatIn.value); }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey) {
+    if (e.key === '2') { e.preventDefault(); switchView('inbox'); }
+    if (e.key === '3') { e.preventDefault(); switchView('history'); }
+    if (e.key === '4') { e.preventDefault(); switchView('pinned'); }
+  }
+});
+
+// ────────────────────────────────────────────
+//  INIT
+// ────────────────────────────────────────────
+progressArea.style.display = 'none';
+addAI(
+  "Hey! I'm Veyra — your business intelligence assistant. I can help you map out your business, brainstorm strategy, or just answer questions as you go.\n\nHow would you like to start?",
+  ["Give me a business overview", "Help me with a challenge", "Explore a new idea", "Just let me ask freely"]
+);
+chatIn.focus();
+</script>
+</body>
+</html>
