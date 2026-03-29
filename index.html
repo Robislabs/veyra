@@ -388,7 +388,9 @@
     .chat-hdr {
       padding: 14px 22px 12px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      background: rgba(255,255,255,0.72);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
       display: flex;
       align-items: center;
       gap: 11px;
@@ -542,7 +544,9 @@
     /* Chat input */
     .chat-input-wrap {
       padding: 10px 22px 14px;
-      background: var(--surface);
+      background: rgba(255,255,255,0.72);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
       border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
@@ -767,7 +771,31 @@
         padding-bottom: max(12px, env(safe-area-inset-bottom));
       }
     }
+    /* ─── DOTTED SURFACE ─── */
+    #dotted-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      display: block;
+    }
+    #view-inbox {
+      position: relative;
+    }
+    .chat-hdr {
+      position: relative;
+      z-index: 2;
+    }
+    .chat-msgs {
+      position: relative;
+      z-index: 1;
+    }
+    .chat-input-wrap {
+      position: relative;
+      z-index: 2;
+    }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
 <div class="overlay" id="overlay"></div>
@@ -971,6 +999,7 @@
 
     <!-- ── INBOX / CHAT ── -->
     <div class="view active" id="view-inbox">
+      <canvas id="dotted-bg"></canvas>
       <div class="chat-hdr">
         <div class="chat-hdr-icon">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -1573,6 +1602,93 @@ addAI(
   ["Give me a business overview", "Help me with a challenge", "Explore a new idea", "Just let me ask freely"]
 );
 chatIn.focus();
+
+// ─── DOTTED SURFACE BACKGROUND ───────────────────────────────────────────────
+(function () {
+  const canvas    = document.getElementById('dotted-bg');
+  const container = document.getElementById('view-inbox');
+
+  const SEPARATION = 110;
+  const AMOUNTX    = 32;
+  const AMOUNTY    = 48;
+
+  const scene  = new THREE.Scene();
+  const w      = container.clientWidth  || window.innerWidth;
+  const h      = container.clientHeight || window.innerHeight;
+
+  const camera = new THREE.PerspectiveCamera(60, w / h, 1, 10000);
+  camera.position.set(0, 310, 950);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(w, h);
+  renderer.setClearColor(0x000000, 0);
+
+  // Build particle positions and colors
+  const positions = [];
+  const colors    = [];
+
+  for (let ix = 0; ix < AMOUNTX; ix++) {
+    for (let iy = 0; iy < AMOUNTY; iy++) {
+      positions.push(
+        ix * SEPARATION - (AMOUNTX * SEPARATION) / 2,
+        0,
+        iy * SEPARATION - (AMOUNTY * SEPARATION) / 2
+      );
+      // Purple accent dots (#6B4EFF) in 0–1 range
+      colors.push(0.42, 0.31, 1.0);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color',    new THREE.Float32BufferAttribute(colors,    3));
+
+  const material = new THREE.PointsMaterial({
+    size:          6,
+    vertexColors:  true,
+    transparent:   true,
+    opacity:       0.28,
+    sizeAttenuation: true,
+  });
+
+  scene.add(new THREE.Points(geometry, material));
+
+  let count = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const posAttr = geometry.attributes.position;
+    const arr     = posAttr.array;
+    let i = 0;
+
+    for (let ix = 0; ix < AMOUNTX; ix++) {
+      for (let iy = 0; iy < AMOUNTY; iy++) {
+        arr[i * 3 + 1] =
+          Math.sin((ix + count) * 0.3) * 40 +
+          Math.sin((iy + count) * 0.5) * 40;
+        i++;
+      }
+    }
+
+    posAttr.needsUpdate = true;
+    renderer.render(scene, camera);
+    count += 0.05;
+  }
+
+  animate();
+
+  // Keep canvas sized to container
+  const ro = new ResizeObserver(() => {
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    camera.aspect = cw / ch;
+    camera.updateProjectionMatrix();
+    renderer.setSize(cw, ch);
+  });
+  ro.observe(container);
+}());
 </script>
 </body>
 </html>
